@@ -23,3 +23,8 @@ Como as variáveis de ambiente (.env) já estão pré definidas pelo código ori
 docker-compose up -d --build
 
 ```
+
+```
+docker-compose down -v
+
+```
