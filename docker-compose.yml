@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -10,20 +8,56 @@ services:
     env_file:
       - cmd/auction/.env
     command: sh -c "/auction"
+    depends_on:
+      - mongodb
     networks:
       - localNetwork
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/auction?status=0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mongodb:
     image: mongo:latest
-    container_name: mongodb
+    container_name: mongodb-auction
     ports:
       - "27017:27017"
-    env_file:
-      - cmd/auction/.env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+      MONGO_INITDB_DATABASE: auctions
     volumes:
       - mongo-data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - localNetwork
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ismaster')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Serviço opcional para testes
+  test-runner:
+    build:
+      dockerfile: Dockerfile.test
+      context: .
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_URL=mongodb://admin:admin@mongodb:27017/auctions_test?authSource=admin
+      - MONGODB_DB=auctions_test
+      - AUCTION_INTERVAL=2s
+    networks:
+      - localNetwork
+    profiles:
+      - testing
+    command: go test -v ./internal/infra/database/auction
 
 volumes:
   mongo-data:
