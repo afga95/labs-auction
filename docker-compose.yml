@@ -1,63 +1,52 @@
 services:
   app:
+    container_name: fullcycle-auction
     build:
-      dockerfile: Dockerfile
       context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     env_file:
       - cmd/auction/.env
-    command: sh -c "/auction"
     depends_on:
       - mongodb
+    restart: unless-stopped
+    command: sh -c "/auction"
     networks:
       - localNetwork
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/auction?status=0"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+
+  test:
+    build: .
+    container_name: fullcycle-auction-test
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    env_file:
+      - cmd/auction/.env
+    command: go test ./... -v
+    networks:
+    - localNetwork
 
   mongodb:
     image: mongo:latest
-    container_name: mongodb-auction
+    container_name: mongodb
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-      MONGO_INITDB_DATABASE: auctions
+    env_file:
+      - cmd/auction/.env
     volumes:
       - mongo-data:/data/db
-      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    restart: unless-stopped
     networks:
       - localNetwork
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ismaster')"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 10s
+      timeout: 5s
       retries: 5
       start_period: 30s
 
-  # Serviço opcional para testes
-  test-runner:
-    build:
-      dockerfile: Dockerfile.test
-      context: .
-    depends_on:
-      - mongodb
-    environment:
-      - MONGODB_URL=mongodb://admin:admin@mongodb:27017/auctions_test?authSource=admin
-      - MONGODB_DB=auctions_test
-      - AUCTION_INTERVAL=2s
-    networks:
-      - localNetwork
-    profiles:
-      - testing
-    command: go test -v ./internal/infra/database/auction
+
 
 volumes:
   mongo-data:
