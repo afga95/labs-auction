@@ -3,12 +3,13 @@ package auction
 import (
 	"context"
 	"fmt"
-	"fullcycle-auction_go/configuration/logger"
-	"fullcycle-auction_go/internal/entity/auction_entity"
-	"fullcycle-auction_go/internal/internal_error"
+	"time"
+
+	"github.com/afga95/labs-auction/configuration/logger"
+	"github.com/afga95/labs-auction/internal/entity/auction_entity"
+	"github.com/afga95/labs-auction/internal/internal_error"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"time"
 )
 
 func (ar *AuctionRepository) FindAuctionById(

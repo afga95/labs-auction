@@ -3,7 +3,8 @@ package validation
 import (
 	"encoding/json"
 	"errors"
-	"fullcycle-auction_go/configuration/rest_err"
+
+	"github.com/afga95/labs-auction/configuration/rest_err"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
